@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendBaseUrl } from "@/lib/backend";
 import { getJobStatus } from "@/lib/downloadManager";
 
 export async function GET(
@@ -6,6 +7,22 @@ export async function GET(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   const { jobId } = await params;
+  const backendBaseUrl = getBackendBaseUrl();
+
+  if (backendBaseUrl) {
+    try {
+      const response = await fetch(`${backendBaseUrl}/status/${jobId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return NextResponse.json(data);
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(errorData, { status: response.status });
+    } catch {
+      // fall back to local behavior if the backend is unavailable
+    }
+  }
 
   const status = getJobStatus(jobId);
 
