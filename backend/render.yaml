@@ -10,5 +10,3 @@ services:
         value: 3.11.9
       - key: DOWNLOAD_DIR
         value: /tmp/yt-downloader-downloads
-      - key: WEB_CONCURRENCY
-        value: "1"
