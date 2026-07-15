@@ -1,5 +1,7 @@
 "use client";
 
+import { Download, Music, Loader2 } from "lucide-react";
+
 interface Format {
   label: string;
   quality: string;
@@ -51,7 +53,7 @@ export default function FormatGrid({
                   onClick={() =>
                     onDownload(videoUrl, format.formatId, `${format.label} Video`, false)
                   }
-                  className="group relative rounded-2xl bg-[var(--surface)] p-4 text-left shadow-[var(--shadow-soft)]
+                  className="group relative rounded-2xl bg-[var(--surface)] cursor-pointer p-4 text-left shadow-[var(--shadow-soft)]
                              transition-all duration-200 hover:bg-[var(--surface-hover)] hover:shadow-[var(--shadow-card)]
                              active:scale-[0.97]"
                 >
@@ -60,43 +62,9 @@ export default function FormatGrid({
                       {format.label}
                     </span>
                     {isDownloadingThis ? (
-                      <svg
-                        className="animate-spin h-4 w-4 text-[var(--accent)] mt-1"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
+                      <Loader2 className="animate-spin h-4 w-4 text-[var(--accent)] mt-1" />
                     ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-[var(--subtle)] group-hover:text-[var(--accent)] transition-colors duration-150 mt-1"
-                      >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" x2="12" y1="15" y2="3" />
-                      </svg>
+                      <Download className="h-4 w-4 text-[var(--subtle)] group-hover:text-[var(--accent)] transition-colors duration-150 mt-1" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -112,9 +80,9 @@ export default function FormatGrid({
                       </>
                     )}
                   </div>
-                  <span className="text-[var(--subtle)] text-xs uppercase mt-1 block">
+                  {/* <span className="text-[var(--subtle)] text-xs uppercase mt-1 block">
                     {format.ext}
-                  </span>
+                  </span> */}
                 </button>
               );
             })}
@@ -137,7 +105,7 @@ export default function FormatGrid({
                   onClick={() =>
                     onDownload(videoUrl, format.formatId, `${format.label}`, true)
                   }
-                  className="group rounded-2xl bg-[var(--surface)] p-4 text-left shadow-[var(--shadow-soft)]
+                  className="group rounded-2xl bg-[var(--surface)] cursor-pointer p-4 text-left shadow-[var(--shadow-soft)]
                              transition-all duration-200 hover:bg-[var(--surface-hover)] hover:shadow-[var(--shadow-card)]
                              active:scale-[0.97] flex items-center gap-4"
                 >
@@ -147,43 +115,9 @@ export default function FormatGrid({
                                 group-hover:bg-[var(--accent-soft)] transition-colors duration-150 shrink-0"
                   >
                     {isDownloadingThis ? (
-                      <svg
-                        className="animate-spin h-5 w-5 text-[var(--accent)]"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
+                      <Loader2 className="animate-spin h-5 w-5 text-[var(--accent)]" />
                     ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors duration-150"
-                      >
-                        <path d="M9 18V5l12-2v13" />
-                        <circle cx="6" cy="18" r="3" />
-                        <circle cx="18" cy="16" r="3" />
-                      </svg>
+                      <Music className="h-5 w-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors duration-150" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -202,22 +136,11 @@ export default function FormatGrid({
                       )}
                     </div>
                   </div>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-[var(--subtle)] group-hover:text-[var(--accent)] transition-colors duration-150 shrink-0"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" x2="12" y1="15" y2="3" />
-                  </svg>
+                  {isDownloadingThis ? (
+                    <Loader2 className="animate-spin h-4 w-4 text-[var(--accent)] shrink-0" />
+                  ) : (
+                    <Download className="h-4 w-4 text-[var(--subtle)] group-hover:text-[var(--accent)] transition-colors duration-150 shrink-0" />
+                  )}
                 </button>
               );
             })}

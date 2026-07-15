@@ -128,8 +128,8 @@ export default function Home() {
           {/* Hero area — only show when no video is loaded */}
           {!videoData && !isLoading && (
             <div className="text-center mb-10 animate-fade-in">
-              <div className="mx-auto mb-4 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
-                Streamed downloads • concurrent pipelines • powered by yt-dlp
+              <div className="mx-auto mb-4 inline-flex uppercase items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
+                Streamed downloads • concurrent pipelines
               </div>
               <h2 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--foreground)] sm:text-6xl">
                 Download YouTube Videos

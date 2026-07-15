@@ -74,7 +74,7 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
             type="button"
             onClick={handlePaste}
             disabled={isLoading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[var(--muted)]
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[var(--muted)] cursor-pointer
                        transition-colors duration-150 hover:bg-[var(--surface-hover)] hover:text-[var(--muted-strong)] disabled:opacity-50"
             title="Paste from clipboard"
           >
@@ -98,7 +98,7 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
         <button
           type="submit"
           disabled={isLoading || !url.trim()}
-          className="flex h-13 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-sm font-medium text-white
+          className="flex h-13 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] cursor-pointer px-6 text-sm font-medium text-white
                      shadow-lg shadow-red-500/20 transition-all duration-200 hover:bg-[var(--accent-hover)]
                      disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.97]"
         >
