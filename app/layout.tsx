@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "YT Downloader — Download YouTube Videos & Audio",
+  title: "YT Videos Downloader - Download YouTube Videos & Audio",
   description:
     "A clean, modern tool to download YouTube videos in multiple resolutions and extract audio. Powered by yt-dlp.",
 };

@@ -5,6 +5,8 @@ import URLInput from "@/components/URLInput";
 import VideoPreview from "@/components/VideoPreview";
 import FormatGrid from "@/components/FormatGrid";
 import ThemeToggle from "@/components/ThemeToggle";
+import DownloadManager from "@/components/DownloadManager";
+import { useDownloadManager } from "@/hooks/useDownloadManager";
 
 interface VideoData {
   id: string;
@@ -40,6 +42,13 @@ export default function Home() {
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
 
+  const {
+    jobs,
+    startDownload,
+    clearCompleted,
+    clearFailed,
+  } = useDownloadManager();
+
   const handleFetch = async (url: string) => {
     setIsLoading(true);
     setError("");
@@ -69,6 +78,13 @@ export default function Home() {
     }
   };
 
+  // Build a set of active job format IDs to pass to FormatGrid
+  const activeJobFormatIds = new Set(
+    jobs
+      .filter((job) => job.status !== "ready" && job.status !== "failed")
+      .map((job) => job.formatId)
+  );
+
   return (
     <main className="flex-1 flex flex-col">
       {/* Header */}
@@ -95,10 +111,10 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-sm font-semibold text-[var(--foreground)]">
-                YT Downloader
+                YT Videos Downloader
               </h1>
               <p className="text-xs text-[var(--muted)]">
-                Fast video & MP3 exports
+                Exports videos & MP3 files faster
               </p>
             </div>
           </div>
@@ -113,13 +129,13 @@ export default function Home() {
           {!videoData && !isLoading && (
             <div className="text-center mb-10 animate-fade-in">
               <div className="mx-auto mb-4 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
-                Streamed downloads • long-video ready • powered by yt-dlp
+                Streamed downloads • concurrent pipelines • powered by yt-dlp
               </div>
               <h2 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--foreground)] sm:text-6xl">
                 Download YouTube Videos
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">
-                Paste a link, pick a quality, and download video or MP3 with a polished, fast, production-grade flow.
+                Paste a link, select quality, and start concurrent downloads. Processing runs server-side, and results stream natively to your browser's download manager.
               </p>
             </div>
           )}
@@ -157,25 +173,33 @@ export default function Home() {
                 videoFormats={videoData.videoFormats}
                 audioFormats={videoData.audioFormats}
                 videoUrl={videoUrl}
+                onDownload={startDownload}
+                activeJobFormatIds={activeJobFormatIds}
               />
             </div>
           )}
         </div>
       </div>
 
+      {/* Floating Download Manager */}
+      <DownloadManager
+        jobs={jobs}
+        clearCompleted={clearCompleted}
+        clearFailed={clearFailed}
+      />
+
       {/* Footer */}
       <footer className="border-t border-[var(--border)] px-6 py-4">
         <p className="text-center text-xs text-[var(--muted)]">
-          Powered by{" "}
+          Designed by{" "}
           <a
             href="https://github.com/yt-dlp/yt-dlp"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]"
           >
-            yt-dlp
+            Jayant Baid
           </a>
-          . For personal use only.
         </p>
       </footer>
     </main>
