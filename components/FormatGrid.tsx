@@ -58,7 +58,7 @@ export default function FormatGrid({
                              active:scale-[0.97]"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <span className="text-[var(--foreground)] font-semibold text-lg">
+                    <span className="text-[var(--foreground)] font-semibold text-lg group-hover:text-[var(--accent)]">
                       {format.label}
                     </span>
                     {isDownloadingThis ? (
@@ -121,7 +121,7 @@ export default function FormatGrid({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[var(--foreground)] font-semibold text-base block truncate">
+                    <span className="text-[var(--foreground)] font-semibold text-base block truncate group-hover:text-[var(--accent)]">
                       {format.label}
                     </span>
                     <div className="flex items-center gap-2 mt-0.5">

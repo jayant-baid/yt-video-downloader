@@ -193,7 +193,7 @@ export default function Home() {
         <p className="text-center text-xs text-[var(--muted)]">
           Designed by{" "}
           <a
-            href="https://github.com/yt-dlp/yt-dlp"
+            href="https://github.com/jayant-baid"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]"
