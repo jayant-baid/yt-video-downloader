@@ -40,7 +40,7 @@ export default function VideoPreview({ video }: VideoPreviewProps) {
             className="w-full h-full object-cover"
           />
           <div
-            className="absolute bottom-3 right-3 bg-black/80 text-[var(--foreground)] text-xs
+            className="absolute bottom-3 right-3 bg-[var(--background)] text-[var(--foreground)] text-xs
                         font-mono px-2 py-1 rounded-md"
           >
             {video.durationString}

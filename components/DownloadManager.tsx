@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { DownloadJob, DownloadStatus } from "@/hooks/useDownloadManager";
 
@@ -61,44 +62,32 @@ export default function DownloadManager({
             Downloads ({jobs.length})
           </h4>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {completedJobs.length > 0 && (
             <button
               onClick={clearCompleted}
-              className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+              className="cursor-pointer rounded-full px-2.5 py-1 font-medium uppercase tracking-wide text-[var(--muted)] transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
             >
-              Clear Clear Completed
+              Clear Completed
             </button>
           )}
           {failedJobs.length > 0 && (
             <button
               onClick={clearFailed}
-              className="text-xs text-[var(--muted)] hover:text-red-400 transition-colors"
+              className="cursor-pointer rounded-full px-2.5 py-1 font-medium uppercase tracking-wide text-[var(--muted)] transition-all hover:bg-red-500/10 hover:text-red-400"
             >
               Clear Failed
             </button>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-full cursor-pointer text-[var(--muted)] transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
             aria-label={isCollapsed ? "Expand panel" : "Collapse panel"}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`transition-transform duration-200 ${
-                isCollapsed ? "rotate-180" : ""
-              }`}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            <ChevronDown
+              size={14}
+              className={`transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+            />
           </button>
         </div>
       </div>

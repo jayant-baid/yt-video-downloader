@@ -114,11 +114,7 @@ export default function FormatGrid({
                     className="w-10 h-10 rounded-lg bg-[var(--surface-hover)] flex items-center justify-center
                                 group-hover:bg-[var(--accent-soft)] transition-colors duration-150 shrink-0"
                   >
-                    {isDownloadingThis ? (
-                      <Loader2 className="animate-spin h-5 w-5 text-[var(--accent)]" />
-                    ) : (
-                      <Music className="h-5 w-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors duration-150" />
-                    )}
+                    <Music className="h-5 w-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors duration-150" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-[var(--foreground)] font-semibold text-base block truncate group-hover:text-[var(--accent)]">

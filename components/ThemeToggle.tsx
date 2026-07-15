@@ -5,25 +5,25 @@ import { useEffect, useState } from 'react';
 
 type Theme = 'dark' | 'light';
 
-function getInitialTheme(): Theme {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    return stored || 'dark';
-  }
-  return 'dark';
-}
-
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem('theme');
+    const initialTheme: Theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+
+    setTheme(initialTheme);
+    document.documentElement.dataset.theme = initialTheme;
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    localStorage.setItem('theme', next);
   };
 
   const isDark = theme === 'dark';
@@ -32,37 +32,10 @@ export default function ThemeToggle() {
     <button
       onClick={toggleTheme}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      style={{
-        width: 36,
-        height: 36,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '9999px',
-        border: '1px solid transparent',
-        backgroundColor: 'var(--surface)',
-        color: 'var(--foreground)',
-        cursor: 'pointer',
-        padding: 0,
-        transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
-        e.currentTarget.style.boxShadow = '0 0 0 2px var(--ring)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'var(--surface)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-[var(--surface)] p-0 text-[var(--foreground)] transition-colors duration-200 hover:bg-[var(--surface-hover)] hover:shadow-[0_0_0_2px_var(--ring)]"
     >
       <div
-        style={{
-          transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(360deg) scale(1)',
-          transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className={`flex items-center justify-center transition-transform duration-500 ${isDark ? 'rotate-0' : 'rotate-360'}`}
       >
         {isDark ? <Moon size={18} /> : <Sun size={18} />}
       </div>
