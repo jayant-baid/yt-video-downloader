@@ -1,7 +1,9 @@
 import os
 import uuid
 import asyncio
+import json
 from pathlib import Path
+from threading import Lock
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -20,8 +22,41 @@ app.add_middleware(
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/tmp/yt-downloader-downloads")
 DOWNLOAD_PATH = Path(DOWNLOAD_DIR)
 DOWNLOAD_PATH.mkdir(parents=True, exist_ok=True)
+JOB_STORE_PATH = DOWNLOAD_PATH / "jobs.json"
 
 jobs: dict = {}
+job_lock = Lock()
+
+
+def _load_jobs() -> None:
+    if not JOB_STORE_PATH.exists():
+        return
+    try:
+        with JOB_STORE_PATH.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+            if isinstance(data, dict):
+                jobs.clear()
+                jobs.update(data)
+    except (json.JSONDecodeError, OSError):
+        pass
+
+
+def _save_jobs() -> None:
+    try:
+        with JOB_STORE_PATH.open("w", encoding="utf-8") as handle:
+            json.dump(jobs, handle)
+    except OSError:
+        pass
+
+
+def _set_job(job_id: str, **updates) -> None:
+    with job_lock:
+        job = jobs.setdefault(job_id, {})
+        job.update(updates)
+        _save_jobs()
+
+
+_load_jobs()
 
 class StartRequest(BaseModel):
     url: str
@@ -30,13 +65,15 @@ class StartRequest(BaseModel):
 async def start(req: StartRequest):
     url = req.url
     job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "preparing"}
+    with job_lock:
+        jobs[job_id] = {"status": "preparing"}
+        _save_jobs()
     asyncio.create_task(run_download(job_id, url))
     return {"jobId": job_id}
 
 async def run_download(job_id: str, url: str):
     try:
-        jobs[job_id]["status"] = "downloading"
+        _set_job(job_id, status="downloading")
         out_template = str(DOWNLOAD_PATH / f"{job_id}.%(ext)s")
         proc = await asyncio.create_subprocess_exec(
             "yt-dlp",
@@ -52,19 +89,19 @@ async def run_download(job_id: str, url: str):
 
         for output_path in DOWNLOAD_PATH.glob(f"{job_id}.*"):
             if output_path.is_file():
-                jobs[job_id]["status"] = "ready"
-                jobs[job_id]["path"] = str(output_path)
+                _set_job(job_id, status="ready", path=str(output_path))
                 return
 
-        jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = (stderr.decode() if stderr else "download failed")
+        _set_job(job_id, status="failed", error=(stderr.decode() if stderr else "download failed"))
     except Exception as e:
-        jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = str(e)
+        _set_job(job_id, status="failed", error=str(e))
 
 @app.get("/status/{job_id}")
 def status(job_id: str):
-    return jobs.get(job_id, {"status": "not_found"})
+    job = jobs.get(job_id)
+    if job is None:
+        return {"status": "not_found"}
+    return job
 
 @app.get("/file/{job_id}")
 def get_file(job_id: str):
