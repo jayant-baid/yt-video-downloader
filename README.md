@@ -22,20 +22,19 @@ A small, modern Next.js app to download YouTube videos and extract audio directl
 npm install
 ```
 
-- Start the local backend:
-
-```bash
-python backend/server.py
-```
-
-- Start the frontend app:
+- Run the dev server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
 - Open http://localhost:3000 in your browser.
-- The frontend will call the backend at http://127.0.0.1:8080 by default for download jobs.
 
 **Build for Production**
 
