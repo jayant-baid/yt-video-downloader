@@ -1,14 +1,16 @@
 import os
 import uuid
 import asyncio
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="yt-downloader-backend")
 
-DOWNLOAD_DIR = "/downloads"
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/tmp/yt-downloader-downloads")
+DOWNLOAD_PATH = Path(DOWNLOAD_DIR)
+DOWNLOAD_PATH.mkdir(parents=True, exist_ok=True)
 
 jobs: dict = {}
 
@@ -26,7 +28,7 @@ async def start(req: StartRequest):
 async def run_download(job_id: str, url: str):
     try:
         jobs[job_id]["status"] = "downloading"
-        out_template = os.path.join(DOWNLOAD_DIR, f"{job_id}.%(ext)s")
+        out_template = str(DOWNLOAD_PATH / f"{job_id}.%(ext)s")
         proc = await asyncio.create_subprocess_exec(
             "yt-dlp",
             "-f",
@@ -37,13 +39,12 @@ async def run_download(job_id: str, url: str):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate()
+        _, stderr = await proc.communicate()
 
-        # locate produced file
-        for fname in os.listdir(DOWNLOAD_DIR):
-            if fname.startswith(job_id):
+        for output_path in DOWNLOAD_PATH.glob(f"{job_id}.*"):
+            if output_path.is_file():
                 jobs[job_id]["status"] = "ready"
-                jobs[job_id]["path"] = os.path.join(DOWNLOAD_DIR, fname)
+                jobs[job_id]["path"] = str(output_path)
                 return
 
         jobs[job_id]["status"] = "failed"

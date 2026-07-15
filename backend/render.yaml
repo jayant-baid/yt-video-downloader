@@ -3,8 +3,10 @@ services:
     name: yt-downloader-backend
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn server:app --host 0.0.0.0 --port 10000"
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn server:app --host 0.0.0.0 --port 10000"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: DOWNLOAD_DIR
+        value: /tmp/yt-downloader-downloads
