@@ -3,19 +3,10 @@ import uuid
 import asyncio
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="yt-downloader-backend")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://yt-video-downloader-beta.vercel.app"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/tmp/yt-downloader-downloads")
 DOWNLOAD_PATH = Path(DOWNLOAD_DIR)
