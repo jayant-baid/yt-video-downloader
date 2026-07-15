@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**YT Downloader**
 
-## Getting Started
+A small, modern Next.js app to download YouTube videos and extract audio directly from the browser. It provides a clean UI to paste a YouTube URL, fetch available formats, and download video/audio via server-side worker routes.
 
-First, run the development server:
+**Features**
+- **Paste + Fetch**: Paste a YouTube URL and fetch metadata and available formats.
+- **Download Manager**: Background download queue with progress, statuses, and retry/cleanup actions.
+- **Theme Toggle**: Light/dark theme with persisted preference.
+- **API Routes**: App routes that orchestrate the download and serve files to the browser.
+
+**Tech Stack**
+- **Framework**: Next.js (App Router)
+- **UI**: Tailwind CSS (utility classes)
+- **Icons**: lucide-react
+- **Language**: TypeScript
+
+**Quick Start**
+
+- Install dependencies:
+
+```bash
+npm install
+```
+
+- Run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Open http://localhost:3000 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Build for Production**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+**Repository Structure (key files)**
+- **App entry**: [app/page.tsx](app/page.tsx)
+- **Layout**: [app/layout.tsx](app/layout.tsx)
+- **Theme toggle**: [components/ThemeToggle.tsx](components/ThemeToggle.tsx)
+- **Download manager UI**: [components/DownloadManager.tsx](components/DownloadManager.tsx)
+- **URL input + fetching**: [components/URLInput.tsx](components/URLInput.tsx)
+- **Download logic**: [lib/downloadManager.ts](lib/downloadManager.ts)
+- **yt-dlp wrapper**: [lib/ytdlp.ts](lib/ytdlp.ts)
+- **API routes**: [app/api](app/api) — routes under `download` and `info`
 
-To learn more about Next.js, take a look at the following resources:
+**How It Works (high level)**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- The UI lets users paste a YouTube link and request available formats (client-side form in `components/URLInput.tsx`).
+- The frontend calls app routes under `app/api` to prepare and run `yt-dlp` (see [lib/ytdlp.ts](lib/ytdlp.ts)).
+- Downloads are tracked by the client via a small download manager hook and UI (`hooks/useDownloadManager.ts`, [components/DownloadManager.tsx](components/DownloadManager.tsx)).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Environment & Configuration**
 
-## Deploy on Vercel
+- There are no required environment variables for local dev by default. If you customize the downloader or add remote storage, document any new environment variables in this file.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Notes & Troubleshooting**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Hydration mismatches: components that read browser-only APIs (localStorage, Date, or window) must avoid accessing them during the first render. See `components/ThemeToggle.tsx` for an example of mount-safe initialization.
+- If you see unexpected tracing or build warnings from Turbopack (during `npm run build`), check for dynamic filesystem access in server code (see the `lib/` folder).
+
+**Development Tips**
+
+- Use the browser DevTools to inspect the Download Manager and API responses.
+- Add tests for `lib/ytdlp.ts` logic by mocking external process calls.
+
+**Contributing**
+
+- Feel free to open issues or pull requests. Keep changes small and focused. Document any new API routes or configuration.
+
+**License**
+
+- MIT (adjust as needed)
+
+---
+
+If you want, I can also add a short Usage guide with screenshots and a CONTRIBUTING.md template. Let me know what you'd like included.
