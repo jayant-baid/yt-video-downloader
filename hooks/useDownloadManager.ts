@@ -1,6 +1,5 @@
 "use client";
 
-import { getBackendBaseUrl } from "@/lib/backend";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 export type DownloadStatus =
@@ -32,10 +31,10 @@ export function useDownloadManager() {
   const startDownload = useCallback(
     async (url: string, formatId: string, label: string, isAudio: boolean) => {
       try {
-        const response = await fetch(`${getBackendBaseUrl()}/start`, {
+        const response = await fetch("/api/download/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url, formatId, isAudio }),
         });
 
         if (!response.ok) {
@@ -60,7 +59,7 @@ export function useDownloadManager() {
         // Start polling
         const poll = async () => {
           try {
-            const res = await fetch(`${getBackendBaseUrl()}/status/${jobId}`);
+            const res = await fetch(`/api/download/status/${jobId}`);
             if (!res.ok) throw new Error("Status check failed");
             const data = await res.json();
 
@@ -77,7 +76,7 @@ export function useDownloadManager() {
                     // Trigger the download
                     setTimeout(() => {
                       const a = document.createElement("a");
-                      a.href = `${getBackendBaseUrl()}/file/${jobId}`;
+                      a.href = `/api/download/file/${jobId}`;
                       a.download = data.filename || "download";
                       document.body.appendChild(a);
                       a.click();
