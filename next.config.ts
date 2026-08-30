@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Allow larger API responses for video file streaming
-  serverExternalPackages: [],
+  serverExternalPackages: ["@ffmpeg-installer/ffmpeg"],
   experimental: {
     serverActions: {
       bodySizeLimit: "500mb",

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const jobId = startJob(url, formatId || "", isAudio === true);
+    const jobId = await startJob(url, formatId || "", isAudio === true);
 
     return NextResponse.json({ jobId });
   } catch (error) {

@@ -135,7 +135,7 @@ export default function Home() {
                 Download YouTube Videos
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">
-                Paste a link, select quality, and start concurrent downloads. Processing runs server-side, and results stream natively to your browser's download manager.
+                Paste a link, select quality, and start concurrent downloads. Processing runs server-side, and results stream natively to your browser&apos;s download manager.
               </p>
             </div>
           )}

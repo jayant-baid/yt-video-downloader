@@ -3,6 +3,7 @@ import { promisify } from "util";
 import path from "path";
 import fs from "fs";
 import os from "os";
+import { bundledFfmpegPath } from "@/lib/ffmpeg";
 
 const execFileAsync = promisify(execFile);
 
@@ -139,8 +140,68 @@ function getWinGetPaths(): string[] {
   return paths;
 }
 
-function findYtDlp(): string {
-  return "yt-dlp";
+let ytDlpPathPromise: Promise<string> | null = null;
+
+/**
+ * Return a usable yt-dlp executable.  A fresh installation used to depend on
+ * a globally-installed `yt-dlp`, which meant every request failed unless the
+ * server operator had manually configured PATH.  Cache the official binary in
+ * the OS temp directory instead, while still allowing deployments to supply a
+ * managed executable through YTDLP_PATH.
+ */
+export function getYtDlpPath(): Promise<string> {
+  if (!ytDlpPathPromise) {
+    ytDlpPathPromise = ensureYtDlp();
+  }
+  return ytDlpPathPromise;
+}
+
+async function ensureYtDlp(): Promise<string> {
+  const configuredPath = process.env.YTDLP_PATH;
+  if (configuredPath) {
+    if (!fs.existsSync(configuredPath)) {
+      throw new Error("YTDLP_PATH is set but does not point to a yt-dlp executable");
+    }
+    return configuredPath;
+  }
+
+  const binaryName = process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp";
+  const binaryDir = path.join(os.tmpdir(), "yt-downloader", "bin");
+  const binaryPath = path.join(binaryDir, binaryName);
+
+  if (fs.existsSync(binaryPath) && fs.statSync(binaryPath).size > 0) {
+    return binaryPath;
+  }
+
+  try {
+    await fs.promises.mkdir(binaryDir, { recursive: true });
+    const platformAsset = process.platform === "win32"
+      ? "yt-dlp.exe"
+      : process.platform === "darwin"
+        ? "yt-dlp_macos"
+        : "yt-dlp";
+    const response = await fetch(
+      `https://github.com/yt-dlp/yt-dlp/releases/latest/download/${platformAsset}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`download returned HTTP ${response.status}`);
+    }
+
+    const temporaryPath = `${binaryPath}.${process.pid}.tmp`;
+    await fs.promises.writeFile(temporaryPath, Buffer.from(await response.arrayBuffer()));
+    if (process.platform !== "win32") {
+      await fs.promises.chmod(temporaryPath, 0o755);
+    }
+    await fs.promises.rename(temporaryPath, binaryPath);
+    return binaryPath;
+  } catch (error) {
+    ytDlpPathPromise = null;
+    const reason = error instanceof Error ? error.message : "unknown error";
+    throw new Error(
+      `Unable to prepare the downloader (${reason}). Set YTDLP_PATH to a local yt-dlp executable or allow access to GitHub releases.`
+    );
+  }
 }
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
@@ -148,7 +209,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
     throw new Error("Invalid YouTube URL");
   }
 
-  const ytdlp = findYtDlp();
+  const ytdlp = await getYtDlpPath();
   const winGetPaths = getWinGetPaths();
   const customEnv = {
     ...process.env,
@@ -190,13 +251,13 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
 
     // Group video formats by resolution — pick the best for each resolution
     const videoByHeight = new Map<string, GroupedFormat>();
-    const targetResolutions = ["2160", "1440", "1080", "720", "480", "360", "240", "144"];
-
     for (const f of allFormats) {
+      // YouTube provides most HD qualities as video-only streams.  Keep them
+      // in the picker; yt-dlp selects a compatible audio stream at download
+      // time when one is needed.
       if (!f.hasVideo) continue;
       const height = f.height?.toString();
       if (!height) continue;
-      if (!targetResolutions.includes(height)) continue;
 
       const existing = videoByHeight.get(height);
       const size = f.filesize || f.filesizeApprox || 0;
@@ -206,36 +267,49 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
       if (!existing || size > existingSize) {
         videoByHeight.set(height, {
           label: QUALITY_MAP[height] || `${height}p`,
-          quality: `${height}p`,
+          quality: `${height}p · ${f.ext.toUpperCase()}${f.fps ? ` · ${f.fps} fps` : ""}`,
           formatId: f.formatId,
-          ext: "mp4",
+          ext: f.ext,
           filesize: f.filesize || f.filesizeApprox,
           type: "video",
         });
       }
     }
 
-    // Sort video formats from highest to lowest
-    const videoFormats = targetResolutions
-      .filter((h) => videoByHeight.has(h))
-      .map((h) => videoByHeight.get(h)!);
+    // Sort every available resolution from highest to lowest. This includes
+    // standard qualities (144p through 1080p) as well as formats such as 2K,
+    // 4K, or a source-specific intermediate resolution.
+    const videoFormats = Array.from(videoByHeight.entries())
+      .sort(([firstHeight], [secondHeight]) => Number(secondHeight) - Number(firstHeight))
+      .map(([, format]) => format);
 
-    // Get best audio format
-    const audioFormats: GroupedFormat[] = [];
-    const bestAudio = allFormats
+    // Offer one choice per audio bitrate. A video commonly has multiple audio
+    // codecs for a single bitrate; prefer M4A when that bitrate is available.
+    const audioByBitrate = new Map<number, GroupedFormat>();
+    const audioCandidates = allFormats
       .filter((f) => !f.hasVideo && f.hasAudio)
-      .sort((a, b) => (b.tbr || 0) - (a.tbr || 0))[0];
+      .sort((a, b) => (b.tbr || 0) - (a.tbr || 0));
 
-    if (bestAudio) {
-      audioFormats.push({
-        label: "Audio (MP3)",
-        quality: "audio",
-        formatId: bestAudio.formatId,
-        ext: "mp3",
-        filesize: bestAudio.filesize || bestAudio.filesizeApprox,
+    for (const format of audioCandidates) {
+      const bitrate = Math.max(1, Math.round(format.tbr || 0));
+      const existing = audioByBitrate.get(bitrate);
+      if (existing && !(format.ext === "m4a" && existing.ext !== "m4a")) {
+        continue;
+      }
+
+      audioByBitrate.set(bitrate, {
+        label: `Audio ${bitrate} kbps`,
+        quality: `${bitrate} kbps`,
+        formatId: format.formatId,
+        ext: format.ext,
+        filesize: format.filesize || format.filesizeApprox,
         type: "audio",
       });
     }
+
+    const audioFormats = Array.from(audioByBitrate.entries())
+      .sort(([firstBitrate], [secondBitrate]) => secondBitrate - firstBitrate)
+      .map(([, format]) => format);
 
     return {
       id: data.id,
@@ -269,7 +343,7 @@ export async function downloadVideo(
   formatId: string,
   isAudio: boolean = false
 ): Promise<{ filePath: string; filename: string; tmpDir: string; fileSize: number }> {
-  const ytdlp = findYtDlp();
+  const ytdlp = await getYtDlpPath();
   const tmpRoot = path.join(os.tmpdir(), "yt-downloader");
   fs.mkdirSync(tmpRoot, { recursive: true });
 
@@ -283,6 +357,8 @@ export async function downloadVideo(
     "--newline",
     "--print",
     "after_move:filepath",
+    "--ffmpeg-location",
+    bundledFfmpegPath,
     "-o",
     outputTemplate,
   ];
@@ -291,18 +367,13 @@ export async function downloadVideo(
     args.push(
       "-f",
       `${formatId || "bestaudio"}/bestaudio`,
-      "-x",
-      "--audio-format",
-      "mp3",
-      "--audio-quality",
-      "0",
       url
     );
   } else {
-    // Download selected video format + best compatible audio, merge into mp4.
+    // Merge the selected video-only stream with the best compatible audio.
     args.push(
       "-f",
-      `${formatId}+bestaudio[ext=m4a]/${formatId}+bestaudio/best[ext=mp4]/best`,
+      `${formatId}+bestaudio[ext=m4a]/${formatId}+bestaudio/${formatId}/best`,
       "--merge-output-format",
       "mp4",
       url

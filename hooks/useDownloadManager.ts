@@ -60,7 +60,10 @@ export function useDownloadManager() {
         const poll = async () => {
           try {
             const res = await fetch(`/api/download/status/${jobId}`);
-            if (!res.ok) throw new Error("Status check failed");
+            if (!res.ok) {
+              const details = await res.json().catch(() => null);
+              throw new Error(details?.error || "Status check failed");
+            }
             const data = await res.json();
 
             setJobs((prev) =>
@@ -114,7 +117,11 @@ export function useDownloadManager() {
             setJobs((prev) =>
               prev.map((job) =>
                 job.jobId === jobId
-                  ? { ...job, status: "failed", error: "Lost connection to download task" }
+                  ? {
+                      ...job,
+                      status: "failed",
+                      error: err instanceof Error ? err.message : "Lost connection to download task",
+                    }
                   : job
               )
             );
@@ -150,8 +157,9 @@ export function useDownloadManager() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const intervals = intervalsRef.current;
     return () => {
-      Object.values(intervalsRef.current).forEach(clearInterval);
+      Object.values(intervals).forEach(clearInterval);
     };
   }, []);
 

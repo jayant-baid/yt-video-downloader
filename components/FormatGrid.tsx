@@ -69,7 +69,7 @@ export default function FormatGrid({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[var(--muted)] text-xs">
-                      {resolutionIcons[format.label] || "Video"}
+                      {format.quality || resolutionIcons[format.label] || "Video"}
                     </span>
                     {format.filesizeFormatted && (
                       <>
@@ -96,7 +96,7 @@ export default function FormatGrid({
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Audio
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {audioFormats.map((format) => {
               const isDownloadingThis = activeJobFormatIds.has(format.formatId);
               return (
@@ -121,7 +121,9 @@ export default function FormatGrid({
                       {format.label}
                     </span>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[var(--muted)] text-xs">Best quality</span>
+                      <span className="text-[var(--muted)] text-xs">
+                        {format.quality} · {format.ext.toUpperCase()}
+                      </span>
                       {format.filesizeFormatted && (
                         <>
                           <span className="text-[var(--subtle)] text-xs">•</span>

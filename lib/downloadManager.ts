@@ -3,6 +3,8 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import crypto from "crypto";
+import { getYtDlpPath } from "@/lib/ytdlp";
+import { bundledFfmpegPath } from "@/lib/ffmpeg";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,7 +100,15 @@ function buildEnv(): NodeJS.ProcessEnv {
 // Job store (in-memory, singleton)
 // ---------------------------------------------------------------------------
 
-const jobs = new Map<string, DownloadJob>();
+type DownloadManagerGlobals = typeof globalThis & {
+  __ytDownloaderJobs?: Map<string, DownloadJob>;
+  __ytDownloaderCleanupTimer?: NodeJS.Timeout;
+};
+
+// Next can evaluate this module once for each route bundle. Keeping the store
+// on globalThis lets the start, status, and file routes access the same jobs.
+const downloadManagerGlobals = globalThis as DownloadManagerGlobals;
+const jobs = downloadManagerGlobals.__ytDownloaderJobs ??= new Map<string, DownloadJob>();
 
 const CLEANUP_AGE_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -114,8 +124,13 @@ function runCleanup() {
   }
 }
 
-// Run cleanup every 5 minutes.
-setInterval(runCleanup, 5 * 60 * 1000);
+// Run one cleanup timer even if Next reloads or evaluates another route bundle.
+if (!downloadManagerGlobals.__ytDownloaderCleanupTimer) {
+  downloadManagerGlobals.__ytDownloaderCleanupTimer = setInterval(
+    runCleanup,
+    5 * 60 * 1000
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -158,11 +173,12 @@ export function cleanupJob(id: string): void {
   jobs.delete(id);
 }
 
-export function startJob(
+export async function startJob(
   url: string,
   formatId: string,
   isAudio: boolean
-): string {
+): Promise<string> {
+  const ytDlpPath = await getYtDlpPath();
   const id = crypto.randomUUID();
 
   const tmpRoot = path.join(os.tmpdir(), "yt-downloader");
@@ -177,20 +193,18 @@ export function startJob(
     "--progress",
     "--progress-template", "download:%(progress._percent_str)s",
     "--print", "after_move:filepath",
+    "--ffmpeg-location", bundledFfmpegPath,
     "-o", outputTemplate,
   ];
 
   if (isAudio) {
     args.push(
       "-f", `${formatId || "bestaudio"}/bestaudio`,
-      "-x",
-      "--audio-format", "mp3",
-      "--audio-quality", "0",
       url
     );
   } else {
     args.push(
-      "-f", `${formatId}+bestaudio[ext=m4a]/${formatId}+bestaudio/best[ext=mp4]/best`,
+      "-f", `${formatId}+bestaudio[ext=m4a]/${formatId}+bestaudio/${formatId}/best`,
       "--merge-output-format", "mp4",
       url
     );
@@ -216,7 +230,7 @@ export function startJob(
 
   // Spawn yt-dlp in the background.
   const customEnv = buildEnv();
-  const child = spawn("yt-dlp", args, {
+  const child = spawn(ytDlpPath, args, {
     env: customEnv,
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
@@ -226,6 +240,7 @@ export function startJob(
 
   let stdoutBuffer = "";
   let stderrBuffer = "";
+  let stderrLog = "";
 
   child.stdout?.on("data", (chunk: Buffer) => {
     stdoutBuffer += chunk.toString();
@@ -268,7 +283,11 @@ export function startJob(
   });
 
   child.stderr?.on("data", (chunk: Buffer) => {
-    stderrBuffer += chunk.toString();
+    const output = chunk.toString();
+    stderrBuffer += output;
+    // Keep the diagnostics independently from the progress-line parser so a
+    // failed task shows yt-dlp's actual reason instead of only its exit code.
+    stderrLog = `${stderrLog}${output}`.slice(-4_000);
 
     // yt-dlp also prints progress to stderr in some versions
     const lines = stderrBuffer.split(/\r?\n/);
@@ -297,7 +316,7 @@ export function startJob(
 
     if (code !== 0 && !job.filePath) {
       job.status = "failed";
-      job.error = stderrBuffer.trim().slice(-500) || `yt-dlp exited with code ${code}`;
+      job.error = stderrLog.trim().slice(-500) || `yt-dlp exited with code ${code}`;
       return;
     }
 

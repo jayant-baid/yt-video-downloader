@@ -22,8 +22,15 @@ export async function GET(
     );
   }
 
-  const ext = job.isAudio ? "mp3" : "mp4";
-  const contentType = job.isAudio ? "audio/mpeg" : "video/mp4";
+  const extension = (job.filename || "").split(".").pop()?.toLowerCase();
+  const ext = extension && /^[a-z0-9]+$/.test(extension)
+    ? extension
+    : job.isAudio
+      ? "m4a"
+      : "mp4";
+  const contentType = job.isAudio
+    ? ext === "m4a" ? "audio/mp4" : ext === "webm" ? "audio/webm" : "audio/mpeg"
+    : ext === "webm" ? "video/webm" : "video/mp4";
   const safeName = (job.filename || "download")
     .replace(/\.[^.]+$/, "")
     .replace(/[^\w\s.-]/g, "_");
