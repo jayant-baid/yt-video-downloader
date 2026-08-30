@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { CheckCheck, ChevronDown, CircleX } from "lucide-react";
 import { useState } from "react";
 import { DownloadJob, DownloadStatus } from "@/hooks/useDownloadManager";
 
@@ -66,17 +66,21 @@ export default function DownloadManager({
           {completedJobs.length > 0 && (
             <button
               onClick={clearCompleted}
-              className="cursor-pointer rounded-full px-2.5 py-1 font-medium uppercase tracking-wide text-[var(--muted)] transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+              className="inline-flex h-6 items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:text-emerald-400"
+              title="Remove completed downloads"
             >
-              Clear Completed
+              <CheckCheck size={12} strokeWidth={2.4} />
+              Done
             </button>
           )}
           {failedJobs.length > 0 && (
             <button
               onClick={clearFailed}
-              className="cursor-pointer rounded-full px-2.5 py-1 font-medium uppercase tracking-wide text-[var(--muted)] transition-all hover:bg-red-500/10 hover:text-red-400"
+              className="inline-flex h-6 items-center gap-1 rounded-md border border-red-500/20 bg-red-500/10 px-1.5 text-[10px] font-medium text-red-600 transition-colors hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-500/30 dark:text-red-400"
+              title="Remove failed downloads"
             >
-              Clear Failed
+              <CircleX size={12} strokeWidth={2.4} />
+              Failed
             </button>
           )}
           <button
